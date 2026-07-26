@@ -331,7 +331,7 @@ app.post("/sso-login", loginLimiter, async (req, res) => {
       });
     }
 
-    // Decode SSO Token (using SSO Secret or standard secret)
+    // Decode SSO Token
     const decoded = jwt.verify(
       token,
       process.env.ASIRNET_SSO_SECRET || process.env.JWT_SECRET
@@ -346,18 +346,25 @@ app.post("/sso-login", loginLimiter, async (req, res) => {
     let user;
 
     if (result.rows.length === 0) {
-      // Create user from SSO data if not present
+      // Schema অনুযায়ী সব টেবিল কলাম ইনসার্ট করা হচ্ছে
       const newUser = await db.query(
         `
-        INSERT INTO users (username, email, avatar, bio)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users (
+          username, 
+          email, 
+          bio, 
+          avatar, 
+          cover_photo
+        )
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *
         `,
         [
-          decoded.username || decoded.email.split("@")[0],
+          decoded.username || decoded.name || decoded.email.split("@")[0],
           decoded.email,
-          decoded.avatar || "",
-          decoded.bio || ""
+          decoded.bio || "",
+          decoded.avatar || decoded.profile_pic || "",
+          decoded.cover_photo || decoded.coverPhoto || ""
         ]
       );
       user = newUser.rows[0];
@@ -400,6 +407,7 @@ app.post("/sso-login", loginLimiter, async (req, res) => {
     });
   }
 });
+
 
 /* =========================
    CURRENT USER
