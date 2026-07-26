@@ -268,7 +268,7 @@ app.post("/signin", loginLimiter, async (req, res) => {
 
     if (!user.password) {
       return res.status(400).json({
-        message: "Please login using SSO"
+        message: "You might have been logged in by using SSO before, so try the button ‘Continue with AsirNet’ to log in"
       });
     }
 
