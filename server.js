@@ -416,29 +416,37 @@ app.post("/sso-login", loginLimiter, async (req, res) => {
 app.get("/me", async (req, res) => {
   try {
     const email = req.query.email;
-
     let result;
 
     if (email) {
+      // LOWER() ব্যবহার করার ফলে ছোট বা বড় হাতের অক্ষর থাকলেও সমস্যা হবে না
       result = await db.query(
         `SELECT id, username, email, bio, avatar, cover_photo
          FROM users
-         WHERE email=$1`,
+         WHERE LOWER(email) = LOWER($1)`,
         [email]
       );
-    } else {
+    } else if (req.user && req.user.id) {
       result = await db.query(
         `SELECT id, username, email, bio, avatar, cover_photo
          FROM users
-         WHERE id=$1`,
+         WHERE id = $1`,
         [req.user.id]
       );
+    } else {
+      return res.status(400).json({ message: "User identity missing" });
     }
 
+    // ইউজার না পাওয়া গেলে empty object না পাঠিয়ে ৪0৪ দিন
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // সরাসরি অবজেক্ট পাঠাচ্ছে
     res.json(result.rows[0]);
 
   } catch (err) {
-    console.log(err);
+    console.error("Error in /me endpoint:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
