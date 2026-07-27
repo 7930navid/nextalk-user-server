@@ -35,7 +35,8 @@ app.use(
   cors({
     origin: [
       "https://7930navid.github.io",
-      "http://localhost:8080"
+      "http://localhost:8080",
+					"https://users-server-xyvg.onrender.com"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
