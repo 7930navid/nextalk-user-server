@@ -37,7 +37,8 @@ app.use(
     origin: [
       "https://7930navid.github.io",
       "http://localhost:8080",
-      "https://users-server-xyvg.onrender.com"
+      "https://users-server-xyvg.onrender.com",
+      "https://nextalk-user-server.onrender.com"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -68,8 +69,10 @@ const loginLimiter = rateLimit({
 /* =========================
    DATABASE (NEXTALK DB)
 ========================= */
+const connectionString = process.env.NEXTALK_DATABASE_URL || process.env.DATABASE_URL;
+
 const db = new Pool({
-  connectionString: process.env.NEXTALK_DATABASE_URL || process.env.DATABASE_URL,
+  connectionString: connectionString,
   ssl:
     process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: false }
@@ -77,14 +80,19 @@ const db = new Pool({
 });
 
 /* =========================
-   EMAIL TRANSPORTER
+   EMAIL TRANSPORTER (FIXED FOR RENDER TIMEOUT)
 ========================= */
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // Port 465 SSL Connection
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
-  }
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000
 });
 
 /* =========================
@@ -325,7 +333,7 @@ app.post("/sso-login", loginLimiter, async (req, res) => {
 });
 
 /* =========================
-   SSO TOKEN GENERATOR FOR NEXTALK (ADDED & FIXED)
+   SSO TOKEN GENERATOR FOR NEXTALK
 ========================= */
 app.post("/auth/sso/nextalk", async (req, res) => {
   try {
@@ -417,7 +425,7 @@ app.get("/me", async (req, res) => {
 /* =========================
    UPDATE PROFILE
 ========================= */
-app.put("/profile", async (req, res) => {
+app.put("/profile", auth, async (req, res) => {
   try {
     const { username, bio, avatar, cover_photo } = req.body;
 
@@ -481,7 +489,7 @@ app.get("/search", async (req, res) => {
 /* =========================
    DELETE ACCOUNT
 ========================= */
-app.delete("/delete-account", async (req, res) => {
+app.delete("/delete-account", auth, async (req, res) => {
   try {
     await db.query("DELETE FROM users WHERE id=$1", [req.user.id]);
     res.json({ message: "Account deleted" });
@@ -524,7 +532,7 @@ app.post("/forgot-password", async (req, res) => {
       subject: "Reset Your Password - NexTalk",
       html: `
       <div style="font-family:Poppins, sans-serif;padding:20px;">
-        <h2>Reset Your Password</h2>
+        ## Reset Your Password
         <p>Click the button below to reset your NexTalk account password.</p>
         <a href="${resetLink}" style="display:inline-block;padding:14px 24px;background:#00e5ff;color:black;text-decoration:none;border-radius:10px;font-weight:bold;">
           Reset Password
@@ -538,7 +546,7 @@ app.post("/forgot-password", async (req, res) => {
       await transporter.sendMail(mailOptions);
       return res.json({ message: "Reset email sent" });
     } catch (mailError) {
-      console.log(mailError);
+      console.log("Mail Send Error:", mailError);
       return res.status(500).json({ message: "Email failed" });
     }
 
