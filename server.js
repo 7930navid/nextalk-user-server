@@ -600,7 +600,7 @@ app.get('/get/api/verify-receiver/:receiver_id', async (req, res) => {
   try {
     const { receiver_id } = req.params;
 
-    const result = await pool.query('SELECT 1 FROM users WHERE email = $1', [receiver_id]);
+    const result = await db.query('SELECT 1 FROM users WHERE email = $1', [receiver_id]);
 
     if (result.rows.length > 0) {
       return res.send('yes');
