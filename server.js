@@ -570,7 +570,7 @@ app.get("/search", async (req, res) => {
    DELETE ACCOUNT
 ========================= */
 
-app.delete("/delete-account", auth, async (req, res) => {
+app.delete("/delete-account", async (req, res) => {
   try {
     await db.query(
       "DELETE FROM users WHERE id=$1",
