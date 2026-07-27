@@ -595,6 +595,26 @@ app.post("/reset-password", async (req, res) => {
   }
 });
 
+
+app.get('/get/api/verify-receiver/:receiver_id', async (req, res) => {
+  try {
+    const { receiver_id } = req.params;
+
+    const result = await pool.query('SELECT 1 FROM users WHERE email = $1', [receiver_id]);
+
+    if (result.rows.length > 0) {
+      return res.send('yes');
+    } else {
+      return res.send('no');
+    }
+  } catch (error) {
+    console.error("Database error:", error);
+    return res.status(500).send('error');
+  }
+});
+
+
+
 /* ============ FETCH ==============*/
 app.get("/get/:name", (req, res) => {
   const name = req.params.name;
