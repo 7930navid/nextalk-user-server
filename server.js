@@ -425,7 +425,7 @@ app.get("/me", async (req, res) => {
 /* =========================
    UPDATE PROFILE
 ========================= */
-app.put("/profile", auth, async (req, res) => {
+app.put("/profile", async (req, res) => {
   try {
     const { username, bio, avatar, cover_photo } = req.body;
 
@@ -446,6 +446,35 @@ app.put("/profile", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+/* =========================
+   SSO CHECKING ON EDIT PROFILE
+========================= */
+
+app.get('/isSsoUser/:email', loginLimiter, async (req, res) => {
+    try {
+        const email = req.params.email;
+
+        const result = await db.query(`
+            SELECT password FROM users WHERE email = $1      
+        `, [email]);
+
+        let resp = '';
+
+        if (result.rows.length === 0 || !result.rows[0].password) {
+            resp = 'y';
+        } else {
+            resp = 'n';
+        }
+        res.send(resp);
+
+    } catch (error) {
+        console.error(error);
+        res.send('Server error');
+    }
+});
+
+
 
 /* =========================
    ALL USERS
@@ -489,7 +518,7 @@ app.get("/search", async (req, res) => {
 /* =========================
    DELETE ACCOUNT
 ========================= */
-app.delete("/delete-account", auth, async (req, res) => {
+app.delete("/delete-account", async (req, res) => {
   try {
     await db.query("DELETE FROM users WHERE id=$1", [req.user.id]);
     res.json({ message: "Account deleted" });
