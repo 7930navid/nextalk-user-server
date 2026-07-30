@@ -427,16 +427,16 @@ app.get("/me", async (req, res) => {
 ========================= */
 app.put("/profile", async (req, res) => {
   try {
-    const { username, bio, avatar, cover_photo } = req.body;
+    const { email, username, bio, avatar, cover_photo } = req.body;
 
     const result = await db.query(
       `
       UPDATE users
       SET username=$1, bio=$2, avatar=$3, cover_photo=$4
-      WHERE id=$5
+      WHERE email=$5
       RETURNING id, username, email, bio, avatar, cover_photo
       `,
-      [username, bio, avatar, cover_photo, req.user.id]
+      [username, bio, avatar, cover_photo, email]
     );
 
     res.json(result.rows[0]);
